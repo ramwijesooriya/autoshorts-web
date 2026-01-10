@@ -7,16 +7,21 @@ export default function Home() {
 
   const handleLogin = async () => {
     setLoading(true)
+    
+    // මෙතන ඔයාගේ සයිට් එකේ නම කෙලින්ම දෙන එක වඩා හොඳයි
+    const siteUrl = 'https://asankawijesooriya.site' 
+    
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        // මෙතන අගට හරියටම /auth/callback එන්න ඕනේ
+        redirectTo: `${siteUrl}/auth/callback`,
         scopes: 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/drive.readonly'
       },
     })
     if (error) alert(error.message)
     setLoading(false)
-  }
+}      
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-black text-white p-4">
