@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 // import { supabase } from '@/supabaseClient'
-import { supabase } from '../../supabaseClient'
+import { supabase } from '../supabaseClient'
 
 // Define the shape of our video data
 type Video = {
