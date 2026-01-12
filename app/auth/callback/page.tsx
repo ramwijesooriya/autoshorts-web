@@ -7,14 +7,14 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const handleAuth = async () => {
-      // 1. URL එකේ තියෙන Hash එක ගන්න
+      // 1. URL Hash එක චෙක් කිරීම
       const hash = window.location.hash
       
-      // Hash එකක් තියෙනවා නම් ඒක අරගෙන Session එක හදන්න ට්‍රයි කරනවා
+      // Hash එකෙන් Manual Session හදන්න උත්සාහ කිරීම
       if (hash && hash.includes('access_token')) {
         setStatus('Setting up session...')
         try {
-          const params = new URLSearchParams(hash.substring(1)) // '#' අයින් කරනවා
+          const params = new URLSearchParams(hash.substring(1))
           const access_token = params.get('access_token')
           const refresh_token = params.get('refresh_token')
 
@@ -28,9 +28,10 @@ export default function AuthCallback() {
               console.error('Error setting session:', error)
               setStatus('Login failed. Please try again.')
             } else if (data.session) {
+              // ✅ Session එක හරිගිය ගමන් Database එක Update කරන්න
+              await saveUserToDatabase(data.session)
+              
               setStatus('Success! Redirecting...')
-              // 🔥 වැදගත්ම වෙනස: router.push වෙනුවට මේක පාවිච්චි කරන්න
-              // මේකෙන් Page එක සම්පූර්ණයෙන්ම Reload වෙලා Dashboard එකට යනව
               window.location.href = '/dashboard'
               return
             }
@@ -40,14 +41,18 @@ export default function AuthCallback() {
         }
       }
 
-      // 2. Hash එකෙන් වැඩේ වුනේ නැත්නම්, සාමාන්‍ය විදියට Session එක බලන්න
+      // 2. දැනටමත් Session එකක් තියෙනවද බලන්න
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
+        // ✅ Session තිබුණොත් Database එක Update කරන්න
+        await saveUserToDatabase(session)
         window.location.href = '/dashboard'
       } else {
-        // තවමත් Session නැත්නම් Listener එකක් දාන්න
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        // Listener එකක් දාන්න
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
           if (session) {
+            // ✅ අලුත් Session එකක් ආවම Database එක Update කරන්න
+            await saveUserToDatabase(session)
             window.location.href = '/dashboard'
           }
         })
@@ -57,6 +62,33 @@ export default function AuthCallback() {
 
     handleAuth()
   }, [])
+
+  // 🔥 Database එකට User Save කරන විශේෂ Function එක
+  const saveUserToDatabase = async (session: any) => {
+    if (!session || !session.user) return
+
+    setStatus('Saving user data...')
+    
+    // Supabase එකෙන් Google Refresh Token එක ගන්න
+    const { provider_refresh_token } = session
+    
+    // Refresh token එකක් තියෙනවා නම් විතරක් Database එක update කරන්න
+    if (provider_refresh_token) {
+      const { error } = await supabase
+        .from('users')
+        .upsert({
+          id: session.user.id,
+          email: session.user.email,
+          refresh_token: provider_refresh_token, // මේක තමයි Backend එකට ඕන යතුර!
+        })
+
+      if (error) {
+        console.error('Error saving user to DB:', error)
+      } else {
+        console.log('User saved successfully!')
+      }
+    }
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-black text-white">

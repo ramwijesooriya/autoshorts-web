@@ -8,26 +8,28 @@ export default function Home() {
   const handleLogin = async () => {
     setLoading(true)
     
-    // මෙතන ඔයාගේ සයිට් එකේ නම කෙලින්ම දෙන එක වඩා හොඳයි
     const siteUrl = 'https://asankawijesooriya.site' 
     
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        // මෙතන අගට හරියටම /auth/callback එන්න ඕනේ
         redirectTo: `${siteUrl}/auth/callback`,
-        scopes: 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/drive.readonly'
+        // YouTube Upload සහ Drive Read අවසර ඉල්ලනවා
+        scopes: 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/drive.readonly',
+        // 🔥 වැදගත්ම කොටස: මේකෙන් තමයි දිගටම තියෙන Refresh Token එක ලැබෙන්නේ
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
       },
     })
     if (error) alert(error.message)
     setLoading(false)
-}      
+  }
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-black text-white p-4">
       <div className="max-w-xl text-center space-y-8">
-        
-        {/* Logo / Heading */}
         <h1 className="text-6xl font-bold bg-gradient-to-r from-red-500 to-purple-600 bg-clip-text text-transparent">
           AutoShorts
         </h1>
@@ -38,20 +40,12 @@ export default function Home() {
           <span className="text-sm text-gray-500">(Running on Hybrid Cloud Engine)</span>
         </p>
 
-        {/* Features Box */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-300 my-8">
-          <div className="p-4 border border-gray-800 rounded-lg">
-            🤖 AI Editing
-          </div>
-          <div className="p-4 border border-gray-800 rounded-lg">
-            📂 Drive Sync
-          </div>
-          <div className="p-4 border border-gray-800 rounded-lg">
-            🚀 Auto Upload
-          </div>
+          <div className="p-4 border border-gray-800 rounded-lg">🤖 AI Editing</div>
+          <div className="p-4 border border-gray-800 rounded-lg">📂 Drive Sync</div>
+          <div className="p-4 border border-gray-800 rounded-lg">🚀 Auto Upload</div>
         </div>
 
-        {/* Login Button */}
         <button
           onClick={handleLogin}
           disabled={loading}
